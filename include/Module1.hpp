@@ -4,22 +4,28 @@
 #include "IModule.hpp"
 #include <thread>
 #include <vector>
-#include <ostream>
+#include <atomic>
+#include <cstdlib>
+#include <ctime>
 
 class Module1 : public IModule {
 public:
-    Module1(std::ostream &outStream);
+    Module1();
     ~Module1();
 
-    void start();
-    void stop();
-    void deliver(const std::vector<unsigned char>& data);
+    void start() override;
+    void stop() override;
+    void deliver(const std::vector<unsigned char>& data) override;
+
+    // Permite definir el siguiente módulo receptor
+    void setNextModule(IModule* next);
 
 private:
-    void run();
-    std::ostream &out;
+    void run(); // hilo principal de generación
+
     std::thread worker;
-    bool running;
+    std::atomic<bool> running;
+    IModule* nextModule;
 };
 
 #endif // MODULE1_H
