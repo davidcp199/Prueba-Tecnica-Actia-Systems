@@ -1,0 +1,21 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.out
+*.exe
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.tmp
+*.log
+
+# Docker
+*.tar
+
+# Others
+*.cache
