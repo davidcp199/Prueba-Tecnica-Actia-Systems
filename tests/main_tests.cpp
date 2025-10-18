@@ -1,66 +1,90 @@
-#include "Utils.hpp"
 #include "Module1.hpp"
-#include <sstream>
-#include <vector>
+#include "Module2.hpp"
 #include <iostream>
-#include <cassert>
+#include <vector>
 #include <thread>
 #include <chrono>
+#include <cassert>
 
-// Test de enviar y recibir un vector simple
-void test_send_receive_TCP() {
-    // Vector original y enviar datos
-    std::vector<unsigned char> original;
-    original.push_back(0);
-    original.push_back(1);
-    original.push_back(2);
-    original.push_back(255);
-    original.push_back(128);
-    original.push_back(64);
+// DummyReceiver simula Module3
+class DummyReceiver : public IModule {
+public:
+    std::vector<std::vector<unsigned char>> received;
 
-    std::ostringstream buffer;
+    void start() override {}
+    void stop() override {}
 
-    send_TCP(buffer, original);
+    void deliver(const std::vector<unsigned char>& data) override {
+        received.push_back(data);
+    }
+};
 
-    // Recibir datos
-    std::vector<unsigned char> recibido;
-    std::istringstream input(buffer.str());
-    receive_TCP(input, recibido);
+// -------------------------
+// Test 1: Module1 genera arrays válidos
+// -------------------------
+void test_module1_basic() {
+    std::cout << "Test 1: Generación de arrays aleatorios por Module1\n";
 
-    // Comprobar que tamaño y contenido son iguales
-    assert(original.size() == recibido.size());
-    for(int i = 0; i < (int)original.size(); ++i)
-        assert(original[i] == recibido[i]);
+    DummyReceiver receiver;
+    Module1 m1;
+    m1.setNextModule(&receiver);
 
-    std::cout << "test_send_receive_TCP PASADO\n";
-}
-
-// Test de Module1 generando arrays y enviándolos a un buffer
-void test_module1_generation() {
-    std::ostringstream buffer;   // Buffer resutlados
-    Module1 m1(buffer);
-
-    // Empezar y generar datos
     m1.start();
     std::this_thread::sleep_for(std::chrono::seconds(1));
     m1.stop();
 
-    std::cout << "test_module1_generation PASADO. Bytes generados: "
-              << buffer.str().size() << "\n";
+    assert(!receiver.received.empty());
 
-    // Leer datos generados
-    std::istringstream input(buffer.str());
-    for(int i = 0; i < 3; ++i) {
-        std::vector<unsigned char> data;
-        receive_TCP(input, data);
-        std::cout << "Array " << i << " recibido, tamaño: " << data.size() << "\n";
+    // Comprobar tamaños y rangos de bytes
+    for (const auto& array : receiver.received) {
+        assert(array.size() >= 1 && array.size() <= 100);
+        for (auto b : array)
+            assert(b >= 0 && b <= 255);
     }
+
+    std::cout << "Generados " << receiver.received.size()
+              << " arrays válidos de tamaños 1-100 con bytes 0-255.\n\n";
 }
 
-int main() {
-    test_send_receive_TCP();
-    test_module1_generation();
+// -------------------------
+// Test 2: Module2 filtra patrón 0x00 0x01 0x02
+// -------------------------
+void test_module2_filter() {
+    std::cout << "Test 2: Filtrado de patrón 0x00 0x01 0x02 por Module2\n";
 
-    std::cout << "Todos los tests pasados correctamente.\n";
+    Module2 m2;
+    DummyReceiver receiver;
+    m2.setNextModule(&receiver);
+
+    m2.start();
+
+    // Array que contiene la secuencia
+    std::vector<unsigned char> withPattern = {5, 0x00, 0x01, 0x02, 7};
+    // Array que no contiene la secuencia
+    std::vector<unsigned char> noPattern = {10, 11, 12};
+
+    m2.deliver(withPattern);
+    m2.deliver(noPattern);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    m2.stop();
+
+    assert(receiver.received.size() == 1);
+    const auto& passed = receiver.received.front();
+    assert(passed.size() == withPattern.size());
+    assert(passed[1] == 0x00 && passed[2] == 0x01 && passed[3] == 0x02);
+
+    std::cout << "Filtrado correcto. Solo pasó el array con la secuencia.\n\n";
+}
+
+
+// -------------------------
+int main() {
+    test_module1_basic();
+    test_module2_filter();
+
+    std::cout << "---------------------------------\n";
+    std::cout << "Todos los tests pasaron correctamente.\n";
+    std::cout << "---------------------------------\n";
     return 0;
 }

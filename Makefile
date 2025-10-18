@@ -17,12 +17,14 @@ TESTS_EXE = $(BUILD)/tests
 
 # -------------------------
 # Archivos fuente
-SRC_FILES = $(SRC_DIR)/Utils.cpp $(SRC_DIR)/Module1.cpp
+SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 MAIN_SRC = $(SRC_DIR)/main.cpp $(SRC_FILES)
+# Excluir main.cpp para tests
+MODULE_FILES = $(filter-out $(SRC_DIR)/main.cpp,$(SRC_FILES))
 TESTS_SRC = $(TESTS_DIR)/main_tests.cpp
 
 # -------------------------
-# Crear carpeta build si no existe
+# Crear carpeta build
 $(BUILD):
 	mkdir -p $(BUILD)
 
@@ -33,28 +35,21 @@ $(MAIN_EXE): $(MAIN_SRC) | $(BUILD)
 
 # -------------------------
 # Compilar tests
-$(TESTS_EXE): $(SRC_FILES) $(TESTS_SRC) | $(BUILD)
-	$(CXX) $(CXXFLAGS) $(SRC_FILES) $(TESTS_SRC) -o $(TESTS_EXE)
+$(TESTS_EXE): $(MODULE_FILES) $(TESTS_SRC) | $(BUILD)
+	$(CXX) $(CXXFLAGS) $(MODULE_FILES) $(TESTS_SRC) -o $(TESTS_EXE)
 
 # -------------------------
 # Ejecutar main
 run: $(MAIN_EXE)
-	$(MAIN_EXE)
+	./$(MAIN_EXE)
 
 # -------------------------
 # Ejecutar tests
 tests: $(TESTS_EXE)
-	$(TESTS_EXE)
+	./$(TESTS_EXE)
 
 # -------------------------
-# Docker
-DOCKER_IMAGE = cpp_modules_dev
+.PHONY: run tests
 
-docker_build:
-	docker build -t $(DOCKER_IMAGE) -f docker/Dockerfile .
-
-docker_run:
-	docker run -it --rm -v $(PWD):/home/dev/app $(DOCKER_IMAGE)
-
-# -------------------------
-.PHONY: run tests docker_build docker_run
+clean:
+	rm -rf $(BUILD)
