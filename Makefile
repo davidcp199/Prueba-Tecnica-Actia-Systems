@@ -1,43 +1,51 @@
-# ========================================
-# Makefile para Docker + CMake + ejecución
-# ========================================
-
+# Nombre de la imagen Docker
 DOCKER_IMAGE = cpp_modules_dev
-PROJECT_DIR = $(PWD)
 
-.DEFAULT_GOAL := help
+# Paths
+SRC = src
+INCLUDE = include
+BUILD = build
 
-# Construir la imagen Docker
-build:
-	@echo "Construyendo imagen Docker..."
-	./run_docker.sh build
+# Compilador
+CXX = g++
+CXXFLAGS = -std=c++17 -I$(INCLUDE)
 
-# Ejecutar el proyecto dentro de Docker (build + run)
-run:
-	@echo "Ejecutando proyecto dentro del contenedor..."
-	./run_docker.sh run
+# Ejecutables
+MAIN_EXE = $(BUILD)/cpp_modules_exe
+TESTS_EXE = $(BUILD)/tests
 
-# Abrir shell interactivo en Docker
-shell:
-	@echo "🐚 Abriendo shell interactivo en Docker..."
-	./run_docker.sh shell
+# Archivos
+MAIN_SRC = $(SRC)/main.cpp $(SRC)/Utils.cpp
+TESTS_SRC = tests/main_tests.cpp $(SRC)/Utils.cpp
 
-# Ejecutar pruebas dentro del contenedor
-test:
-	@echo "🧪 Ejecutando tests dentro del contenedor..."
-	docker run -it --rm -v "$(PROJECT_DIR)":/home/dev/app $(DOCKER_IMAGE) bash -c "\
-		cd build && ctest"
+# Crear carpeta build si no existe
+$(BUILD):
+	mkdir -p $(BUILD)/tests
 
-# Subir la imagen a Docker Hub
-push:
-	@echo "⬆️ Subiendo imagen a Docker Hub..."
-	docker push $(DOCKER_IMAGE)
+# -------------------------
+# Compilar main
+$(MAIN_EXE): $(MAIN_SRC) | $(BUILD)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
-# Mostrar ayuda
-help:
-	@echo "Uso: make [build|run|shell|test|push]"
-	@echo "  build : Construye la imagen Docker"
-	@echo "  run   : Compila y ejecuta el proyecto dentro del contenedor"
-	@echo "  shell : Abre un shell interactivo dentro del contenedor"
-	@echo "  test  : Ejecuta los tests dentro del contenedor"
-	@echo "  push  : Sube la imagen a Docker Hub"
+# Compilar tests
+$(TESTS_EXE): $(TESTS_SRC) | $(BUILD)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+# -------------------------
+# Ejecutar main
+run: $(MAIN_EXE)
+	$(MAIN_EXE)
+
+# Ejecutar tests
+tests: $(TESTS_EXE)
+	$(TESTS_EXE)
+
+# -------------------------
+# Docker
+docker_build:
+	docker build -t $(DOCKER_IMAGE) -f docker/Dockerfile .
+
+docker_run:
+	docker run -it --rm -v $(PWD):/home/dev/app $(DOCKER_IMAGE)
+
+.PHONY: run tests docker_build docker_run
