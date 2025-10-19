@@ -1,55 +1,72 @@
-# -------------------------
 # Paths
 SRC_DIR = src
 INCLUDE = include
 BUILD = build
 TESTS_DIR = tests
 
-# -------------------------
-# Compilador y flags
+# Compiler
 CXX = g++
 CXXFLAGS = -std=c++17 -I$(INCLUDE) -Wall -Wextra -pthread
 
-# -------------------------
-# Ejecutables
+# Executables
 MAIN_EXE = $(BUILD)/cpp_modules_exe
 TESTS_EXE = $(BUILD)/tests
 
-# -------------------------
-# Archivos fuente
-SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
+# Sources
+SRC_FILES = $(SRC_DIR)/Module1.cpp $(SRC_DIR)/Module2.cpp $(SRC_DIR)/Module3.cpp
 MAIN_SRC = $(SRC_DIR)/main.cpp $(SRC_FILES)
-# Excluir main.cpp para tests
-MODULE_FILES = $(filter-out $(SRC_DIR)/main.cpp,$(SRC_FILES))
 TESTS_SRC = $(TESTS_DIR)/main_tests.cpp
 
-# -------------------------
-# Crear carpeta build
+# Docker image
+DOCKER_IMAGE = cpp_modules_dev
+PROJECT_DIR = $(shell pwd)
+
+# -------------------------------
+# Local build
+# -------------------------------
+
+# Build folder
 $(BUILD):
 	mkdir -p $(BUILD)
 
-# -------------------------
-# Compilar main
+# Compile main
 $(MAIN_EXE): $(MAIN_SRC) | $(BUILD)
 	$(CXX) $(CXXFLAGS) $(MAIN_SRC) -o $(MAIN_EXE)
 
-# -------------------------
-# Compilar tests
-$(TESTS_EXE): $(MODULE_FILES) $(TESTS_SRC) | $(BUILD)
-	$(CXX) $(CXXFLAGS) $(MODULE_FILES) $(TESTS_SRC) -o $(TESTS_EXE)
+# Compile tests
+$(TESTS_EXE): $(SRC_FILES) $(TESTS_SRC) | $(BUILD)
+	$(CXX) $(CXXFLAGS) $(SRC_FILES) $(TESTS_SRC) -o $(TESTS_EXE)
 
-# -------------------------
-# Ejecutar main
+# Run main locally
 run: $(MAIN_EXE)
-	./$(MAIN_EXE)
+	$(MAIN_EXE)
 
-# -------------------------
-# Ejecutar tests
+# Run tests locally
 tests: $(TESTS_EXE)
-	./$(TESTS_EXE)
+	$(TESTS_EXE)
 
-# -------------------------
-.PHONY: run tests
-
+# Clean build
 clean:
 	rm -rf $(BUILD)
+
+# -------------------------------
+# Docker targets
+# -------------------------------
+
+# Build Docker image
+docker_build:
+	docker build -t $(DOCKER_IMAGE) -f docker/Dockerfile .
+
+# Run project inside Docker usando múltiples hilos
+docker_run: docker_build
+	docker run -it --rm -v "$(PROJECT_DIR)":/home/dev/app $(DOCKER_IMAGE) bash -c "\
+		mkdir -p build && cd build && cmake .. && make -j\`nproc\` && ./cpp_modules_exe"
+
+# Run tests inside Docker usando múltiples hilos
+docker_run_tests: docker_build
+	docker run -it --rm -v "$(PROJECT_DIR)":/home/dev/app $(DOCKER_IMAGE) bash -c "\
+		mkdir -p build && cd build && cmake .. && make -j\`nproc\` && ./tests"
+
+# Open interactive shell in Docker
+docker_shell: docker_build
+	docker run -it --rm -v "$(PROJECT_DIR)":/home/dev/app $(DOCKER_IMAGE) bash

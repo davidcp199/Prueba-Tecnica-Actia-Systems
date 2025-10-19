@@ -1,12 +1,9 @@
 #pragma once
 #include "IModule.hpp"
 #include <vector>
-#include <thread>
 #include <mutex>
-#include <queue>
-#include <atomic>
-#include <chrono>
 #include <iostream>
+#include <chrono>
 
 class Module3 : public IModule {
 public:
@@ -16,15 +13,15 @@ public:
     void start() override;
     void stop() override;
     void deliver(const std::vector<unsigned char>& data) override;
+    void setNextModule(IModule* next) override;
 
 private:
-    void run(); // Hilo interno
-    std::thread worker;
-    std::atomic<bool> running;
+    struct Record {
+        std::vector<unsigned char> data;
+        std::chrono::system_clock::time_point timestamp;
+    };
 
-    std::queue<std::pair<std::chrono::system_clock::time_point, std::vector<unsigned char>>> buffer;
-    std::mutex buffer_mutex;
-
-    // Almacena todos los arrays recibidos para imprimir
-    std::vector<std::pair<std::chrono::system_clock::time_point, std::vector<unsigned char>>> all_records;
+    std::vector<Record> records; // Buffer de hasta 100 arrays
+    std::mutex mtx;
+    const size_t maxBuffer = 100;
 };

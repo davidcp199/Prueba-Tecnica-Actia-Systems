@@ -1,12 +1,10 @@
-#ifndef MODULE2_H
-#define MODULE2_H
-
+#pragma once
 #include "IModule.hpp"
-#include <thread>
+#include <vector>
 #include <queue>
 #include <mutex>
+#include <thread>
 #include <atomic>
-#include <vector>
 
 class Module2 : public IModule {
 public:
@@ -16,19 +14,14 @@ public:
     void start() override;
     void stop() override;
     void deliver(const std::vector<unsigned char>& data) override;
-
-    void setNextModule(IModule* next);
+    void setNextModule(IModule* next) override;
 
 private:
     void run();
-
     std::thread worker;
     std::atomic<bool> running;
-    std::queue<std::vector<unsigned char> > buffer;
-    std::mutex bufferMutex;
 
     IModule* nextModule;
+    std::queue<std::vector<unsigned char>> buffer;
+    std::mutex buffer_mutex;
 };
-
-#endif
- // MODULE2_H
