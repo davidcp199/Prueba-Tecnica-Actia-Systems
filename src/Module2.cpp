@@ -31,16 +31,14 @@ void Module2::run() {
 
     while(running) {
         std::vector<unsigned char> data;
-        {
-            std::lock_guard<std::mutex> lock(buffer_mutex);
-            if(!buffer.empty()) {
-                data = buffer.front();
-                buffer.pop();
-            }
+        std::lock_guard<std::mutex> lock(buffer_mutex);
+        if(!buffer.empty()) {
+            data = buffer.front();
+            buffer.pop();
         }
 
         if(!data.empty()) {
-            auto it = std::search(data.begin(), data.end(), pattern.begin(), pattern.end());
+            std::vector<unsigned char>::iterator it = std::search(data.begin(), data.end(), pattern.begin(), pattern.end());
             if(it != data.end() && nextModule) {
                 nextModule->deliver(data);
             }

@@ -53,20 +53,25 @@ clean:
 # Docker targets
 # -------------------------------
 
-# Build Docker image
+# Variables
+DOCKER_IMAGE=cpp_modules_dev
+
+# -------------------------------
+# Build docker image
+# -------------------------------
 docker_build:
 	docker build -t $(DOCKER_IMAGE) -f docker/Dockerfile .
 
-# Run project inside Docker usando múltiples hilos
+# -------------------------------
+# Run main executable inside docker
+# -------------------------------
 docker_run: docker_build
-	docker run -it --rm -v "$(PROJECT_DIR)":/home/dev/app $(DOCKER_IMAGE) bash -c "\
+	docker run -it --rm -v "$(PWD)":/home/dev/app $(DOCKER_IMAGE) bash -c "\
 		mkdir -p build && cd build && cmake .. && make -j\`nproc\` && ./cpp_modules_exe"
 
-# Run tests inside Docker usando múltiples hilos
+# -------------------------------
+# Run tests executable inside docker
+# -------------------------------
 docker_run_tests: docker_build
-	docker run -it --rm -v "$(PROJECT_DIR)":/home/dev/app $(DOCKER_IMAGE) bash -c "\
+	docker run -it --rm -v "$(PWD)":/home/dev/app $(DOCKER_IMAGE) bash -c "\
 		mkdir -p build && cd build && cmake .. && make -j\`nproc\` && ./tests"
-
-# Open interactive shell in Docker
-docker_shell: docker_build
-	docker run -it --rm -v "$(PROJECT_DIR)":/home/dev/app $(DOCKER_IMAGE) bash

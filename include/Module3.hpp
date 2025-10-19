@@ -1,9 +1,12 @@
 #pragma once
 #include "IModule.hpp"
 #include <vector>
+#include <queue>
 #include <mutex>
-#include <iostream>
+#include <thread>
+#include <atomic>
 #include <chrono>
+#include <iostream>
 
 class Module3 : public IModule {
 public:
@@ -21,7 +24,14 @@ private:
         std::chrono::system_clock::time_point timestamp;
     };
 
-    std::vector<Record> records; // Buffer de hasta 100 arrays
-    std::mutex mtx;
+    void run();
+
+    std::thread worker;
+    std::atomic<bool> running;
+
+    std::queue<Record> buffer;    // Buffer de entrada
+    std::mutex buffer_mutex;
+
+    std::vector<Record> records;  // Todos los registros guardados
     const size_t maxBuffer = 100;
 };
