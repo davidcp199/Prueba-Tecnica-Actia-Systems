@@ -4,11 +4,11 @@ DESCRIPCION
 
     -> El primer módulo genera de forma continua arreglos de bytes aleatorios, con longitudes entre 1 y 100 y valores entre 0 y 255.
 
-    -> El segundo módulo recibe esos arreglos, busca una secuencia específica de bytes y solo envía al siguiente módulo los que la contienen.
+    -> El segundo módulo recibe los arrays, busca una secuencia de bytes y solo envía al siguiente módulo los que la contienen.
 
-    -> Por último, el tercer módulo almacena los arreglos recibidos junto con su marca temporal (UTC) y los muestra por pantalla en orden cronológico, manteniendo un máximo de 100 registros.
+    -> El tercer módulo almacena los arreglos recibidos junto con su timestamp (UTC) y los muestra en orden cronológico, con 100 de máximo.
 
-    El programa principal simplemente crea los tres módulos, los conecta (m1 → m2 → m3), los ejecuta durante 100 segundos y, al terminar, detiene su ejecución y libera los recursos.
+    El programa principal simplemente crea los tres módulos, los conecta y los ejecuta durante 100 segundos.
 
 
 DOCKER
